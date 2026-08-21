@@ -13,7 +13,7 @@
 [![Ollama](https://img.shields.io/badge/Ollama-Local%20LLM-ffffff)](https://ollama.com/)
 [![NVIDIA](https://img.shields.io/badge/NVIDIA-Nemotron%20Reviewer-76B900?logo=nvidia&logoColor=white)](https://build.nvidia.com/)
 
-*An interview-ready research agent that decides when to use tools, retrieves grounded evidence from documents and the web, reviews answer quality, and remembers useful preferences across sessions.*
+*A research agent decides when to use tools, retrieves grounded evidence from documents and the web, reviews answer quality, and remembers useful preferences across sessions.*
 
 [Overview](#overview) · [Architecture](#architecture) · [Repository Structure](#repository-structure) · [Installation](#installation) · [Quick Start](#quick-start) · [Running the Platform](#running-the-platform) · [Troubleshooting](#troubleshooting)
 
