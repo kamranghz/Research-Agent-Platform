@@ -1,0 +1,36 @@
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Test cache
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE settings
+.vscode/
+
+# Local vector stores, checkpoints, and runtime data
+data/
+
+# Personal / unrelated local files
+Kamran Gholizadeh.py
+Kamran Gholizadeh.zip
+previous_project_tree.txt
+dict
+str
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Allow example env template
+!.env.example
