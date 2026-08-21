@@ -1,0 +1,33 @@
+langgraph==1.2.10
+langchain-ollama==1.1.0
+langchain-core>=1.5.3
+pydantic==2.13.4
+langsmith==0.10.15
+python-dotenv==1.2.2
+pytest==9.1.1
+
+requests==2.34.2
+beautifulsoup4==4.15.0
+
+# RAG dependencies
+langchain-text-splitters==1.1.2
+langchain-chroma==1.1.0
+chromadb>=1.5.9
+
+# PDF document loading
+pypdf==6.14.1
+
+# LlamaIndex RAG backend
+llama-index-core==0.14.23
+llama-index-embeddings-ollama==0.9.0
+llama-index-vector-stores-chroma==0.5.5
+
+# Short-term memory checkpointer
+langgraph-checkpoint-sqlite==3.1.1
+
+# Model Context Protocol
+mcp==2.0.0
+
+# Streamlit UI and charts
+streamlit==1.61.0
+matplotlib==3.11.1
