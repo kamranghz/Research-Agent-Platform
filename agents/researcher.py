@@ -8,14 +8,27 @@ from memory.long_term import (
     search_memories,
 )
 from memory.short_term import format_conversation_history
-from models.llm import llm
+from models.llm import get_structured_llm, llm
 from models.prompts import RESEARCHER_SYSTEM_PROMPT
 from models.schemas import ResearchOutput
+from tools.registry import DISABLED_TOOL_NAMES
 
 
-structured_researcher = llm.with_structured_output(
-    ResearchOutput
-)
+structured_researcher = get_structured_llm(ResearchOutput)
+
+
+def _system_prompt() -> str:
+    """Researcher prompt plus a note about tools switched off here."""
+
+    if not DISABLED_TOOL_NAMES:
+        return RESEARCHER_SYSTEM_PROMPT
+
+    disabled = ", ".join(sorted(DISABLED_TOOL_NAMES))
+    return (
+        RESEARCHER_SYSTEM_PROMPT
+        + "\n\nTools DISABLED in this deployment (never request them; "
+        + f"explain that they are unavailable instead): {disabled}.\n"
+    )
 
 
 def _extract_url(query: str) -> str:
@@ -206,6 +219,19 @@ def _research_output_to_state(
             wants_tool = False
             tool_input = ""
 
+    if wants_tool and response.tool_name in DISABLED_TOOL_NAMES:
+        return {
+            "needs_tool": False,
+            "draft_answer": (
+                f"The `{response.tool_name}` tool is disabled in this "
+                "deployment, so I can't use it to answer this question."
+            ),
+            "tool_name": "",
+            "tool_input": "",
+            "selected_tool_name": response.tool_name,
+            "retry_count": retry_count,
+        }
+
     if wants_tool and response.tool_name and tool_input:
         return {
             "needs_tool": True,
@@ -336,7 +362,7 @@ Instructions:
         [
             {
                 "role": "system",
-                "content": RESEARCHER_SYSTEM_PROMPT,
+                "content": _system_prompt(),
             },
             {
                 "role": "user",

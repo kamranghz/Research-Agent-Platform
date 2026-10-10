@@ -17,14 +17,17 @@ import streamlit as st
 
 from config.settings import (
     CHROMA_COLLECTION_NAME,
+    DEMO_MODE,
+    EMBEDDING_PROVIDER,
     ENABLE_LONG_TERM_MEMORY,
     LLAMAINDEX_CHROMA_COLLECTION_NAME,
+    LLM_PROVIDER,
     MEMORY_BACKEND,
-    OLLAMA_EMBEDDING_MODEL,
 )
 from core.invoke import run_research_turn
+from core.limits import QuestionLimitReached, limiter
 from mcp_integration.client import list_mcp_tools
-from tools.registry import TOOL_NAMES
+from tools.registry import DISABLED_TOOL_NAMES, TOOL_NAMES
 
 
 st.set_page_config(
@@ -37,6 +40,8 @@ st.set_page_config(
 def _init_session_state() -> None:
     defaults = {
         "thread_id": f"ui-{uuid.uuid4().hex[:8]}",
+        # Server-side identity for usage caps; not user editable.
+        "session_key": uuid.uuid4().hex,
         "user_id": "demo-user",
         "enable_long_term_memory": ENABLE_LONG_TERM_MEMORY,
         "chat_history": [],
@@ -137,6 +142,8 @@ def _sidebar() -> None:
     st.sidebar.markdown("**Available tools**")
     for name in sorted(TOOL_NAMES):
         st.sidebar.write(f"- `{name}`")
+    for name in sorted(DISABLED_TOOL_NAMES):
+        st.sidebar.write(f"- ~~`{name}`~~ (disabled)")
 
     if st.session_state.mcp_tools is None:
         with st.sidebar.spinner("Checking MCP..."):
@@ -161,22 +168,33 @@ def main() -> None:
         "and short/long-term memory."
     )
 
-    col_a, col_b, col_c = st.columns([2, 2, 1])
-    with col_a:
-        st.session_state.thread_id = st.text_input(
-            "Session / thread ID",
-            value=st.session_state.thread_id,
+    if DEMO_MODE:
+        # Public demo: no user-controlled identity or memory settings.
+        st.info(
+            "Public demo: browser tool and long-term memory are off, "
+            "file access is limited to `datasets/`, and each session is "
+            f"capped at {limiter.per_session} questions. The first request "
+            "after idle time can take 20-40 s (cold start)."
         )
-    with col_b:
-        st.session_state.user_id = st.text_input(
-            "Optional user ID",
-            value=st.session_state.user_id,
-        )
-    with col_c:
-        st.session_state.enable_long_term_memory = st.toggle(
-            "Long-term memory",
-            value=st.session_state.enable_long_term_memory,
-        )
+        st.session_state.user_id = ""
+        st.session_state.enable_long_term_memory = False
+    else:
+        col_a, col_b, col_c = st.columns([2, 2, 1])
+        with col_a:
+            st.session_state.thread_id = st.text_input(
+                "Session / thread ID",
+                value=st.session_state.thread_id,
+            )
+        with col_b:
+            st.session_state.user_id = st.text_input(
+                "Optional user ID",
+                value=st.session_state.user_id,
+            )
+        with col_c:
+            st.session_state.enable_long_term_memory = st.toggle(
+                "Long-term memory",
+                value=st.session_state.enable_long_term_memory,
+            )
 
     if st.button("Clear current conversation"):
         st.session_state.thread_id = f"ui-{uuid.uuid4().hex[:8]}"
@@ -191,6 +209,13 @@ def main() -> None:
             st.write(turn["final_answer"])
 
     prompt = st.chat_input("Ask a research question")
+    if prompt and DEMO_MODE:
+        try:
+            limiter.acquire(st.session_state.session_key)
+        except QuestionLimitReached as error:
+            st.warning(str(error))
+            prompt = None
+
     if prompt:
         with st.chat_message("user"):
             st.write(prompt)
@@ -241,20 +266,28 @@ def main() -> None:
     with st.expander("Tool evidence", expanded=False):
         st.text(result.get("tool_result") or "(no tool evidence)")
 
+    judge_ok = result.get("review_status", "ok") == "ok"
     st.markdown("**Reviewer scores**")
-    st.json(
-        {
-            "accuracy": result.get("review_accuracy"),
-            "relevance": result.get("review_relevance"),
-            "clarity": result.get("review_clarity"),
-            "completeness": result.get("review_completeness"),
-            "reason": result.get("review_reason"),
-        }
-    )
+    if judge_ok:
+        st.json(
+            {
+                "accuracy": result.get("review_accuracy"),
+                "relevance": result.get("review_relevance"),
+                "clarity": result.get("review_clarity"),
+                "completeness": result.get("review_completeness"),
+                "reason": result.get("review_reason"),
+            }
+        )
+    else:
+        st.warning(
+            "Judge unavailable - this answer was NOT quality-reviewed. "
+            + (result.get("review_reason") or "")
+        )
 
     chart_col_1, chart_col_2 = st.columns(2)
     with chart_col_1:
-        _render_reviewer_chart(result)
+        if judge_ok:
+            _render_reviewer_chart(result)
     with chart_col_2:
         _render_retrieval_chart(result.get("tool_result") or "")
 
