@@ -35,6 +35,11 @@ def tool_router(state: AgentState) -> str:
 
 
 def review_router(state: AgentState) -> str:
+    # Judge down: retrying cannot improve the scores, so finalize
+    # and let the UI label the answer as unreviewed.
+    if state.get("review_status") == "unavailable":
+        return "max_retry"
+
     if (
         state["review_accuracy"] >= REVIEW_THRESHOLDS.accuracy
         and state["review_relevance"] >= REVIEW_THRESHOLDS.relevance

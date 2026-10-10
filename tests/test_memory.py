@@ -9,7 +9,16 @@ from memory.short_term import (
     bound_messages,
     format_conversation_history,
 )
+import os
+
+import pytest
 from langchain_core.messages import AIMessage, HumanMessage
+
+# These tests embed text and need a running embedding backend (Ollama).
+needs_embeddings = pytest.mark.skipif(
+    os.getenv("RUN_LIVE_TESTS") != "1",
+    reason="live test: set RUN_LIVE_TESTS=1 (needs the embedding backend)",
+)
 
 
 def test_short_term_message_bounding() -> None:
@@ -30,6 +39,7 @@ def test_short_term_message_bounding() -> None:
     assert "Assistant: Hi" in history
 
 
+@needs_embeddings
 def test_long_term_memory_roundtrip() -> None:
     user_id = "pytest-ltm-user"
     saved = save_memory(
@@ -56,6 +66,7 @@ def test_long_term_memory_roundtrip() -> None:
     assert delete_memory(saved["memory_id"]) is True
 
 
+@needs_embeddings
 def test_preference_extraction_helper() -> None:
     user_id = "pytest-extract-user"
     saved = maybe_extract_and_save_memory(

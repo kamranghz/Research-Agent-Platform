@@ -1,12 +1,20 @@
-from models.llm import llm
+import os
+
+import pytest
+
 from models.prompts import REVIEWER_SYSTEM_PROMPT
 from models.schemas import ReviewOutput
 
 
+@pytest.mark.live
+@pytest.mark.skipif(
+    os.getenv("RUN_LIVE_TESTS") != "1",
+    reason="live test: set RUN_LIVE_TESTS=1 (needs the configured LLM)",
+)
 def test_structured_output() -> None:
-    structured_reviewer = llm.with_structured_output(ReviewOutput)
+    from models.llm import get_structured_llm
 
-    review = structured_reviewer.invoke(
+    review = get_structured_llm(ReviewOutput).invoke(
         f"""
 {REVIEWER_SYSTEM_PROMPT}
 
@@ -18,8 +26,4 @@ MCP stands for Model Context Protocol.
 """
     )
 
-    print(review)
-
-
-if __name__ == "__main__":
-    test_structured_output()
+    assert isinstance(review, ReviewOutput)

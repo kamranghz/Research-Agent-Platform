@@ -43,3 +43,5 @@ class AgentState(TypedDict):
     long_term_memory_context: NotRequired[str]
     selected_tool_name: NotRequired[str]
     error_message: NotRequired[str]
+    # "ok" | "unavailable" (judge failed; scores are meaningless).
+    review_status: NotRequired[str]

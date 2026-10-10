@@ -299,6 +299,33 @@ python -m streamlit run ui/app.py
 
 ---
 
+## Public Demo (Azure Container Apps)
+
+The demo runs the same code as the local setup with `DEMO_MODE=1`:
+
+| Setting | Local default | Public demo |
+|---------|---------------|-------------|
+| Researcher LLM | Ollama | NVIDIA `nemotron-3-super-120b-a12b` (Groq fallback) |
+| Judge | NVIDIA | NVIDIA `nemotron-3.5-lightning-30b-a3b` (Groq fallback) |
+| Embeddings | Ollama | NVIDIA `nemotron-3-embed-1b` |
+| `browser_tool` | on | **off** (SSRF / abuse surface) |
+| `llamaindex_rag_tool` | on | off (uses the local Ollama embedder) |
+| `search_tool` | on if `TAVILY_API_KEY` | on only if a key is configured |
+| `file_reader` | any `.txt`/`.md` | only inside `datasets/` |
+| Long-term memory | on | **off** |
+| Usage cap | none | 5 questions/session, 300/day per replica |
+
+If the judge cannot be reached the UI says **"Judge unavailable - answer not
+reviewed"**. It never substitutes made-up scores.
+
+**Cold start:** the app scales to zero when idle, so the first request after a
+quiet period can take roughly 20-40 s while the container starts and the demo
+PDF is re-indexed. Subsequent requests are fast. Counters reset on scale-to-zero.
+
+Deployment steps: [`deploy/DEPLOY.md`](deploy/DEPLOY.md).
+
+---
+
 ## Running the Platform
 
 ### Compare retrieval backends

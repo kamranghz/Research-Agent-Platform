@@ -1,13 +1,19 @@
 from langchain_core.tools import tool
-from tavily import TavilyClient
-
 from config.settings import TAVILY_API_KEY
 
 
-# Create one Tavily client and reuse it for all searches.
-tavily_client = TavilyClient(
-    api_key=TAVILY_API_KEY
-)
+_client = None
+
+
+def _get_client():
+    """Create the Tavily client lazily so imports work without a key."""
+
+    global _client
+    if _client is None:
+        from tavily import TavilyClient
+
+        _client = TavilyClient(api_key=TAVILY_API_KEY)
+    return _client
 
 
 @tool
@@ -18,9 +24,12 @@ def search_tool(query: str) -> str:
     if not query.strip():
         return "Search query cannot be empty."
 
+    if not TAVILY_API_KEY:
+        return "Search is disabled: no TAVILY_API_KEY is configured."
+
     try:
         # Search the web and request up to five relevant results.
-        response = tavily_client.search(
+        response = _get_client().search(
             query=query.strip(),
             max_results=3,
         )

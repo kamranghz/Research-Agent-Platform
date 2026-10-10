@@ -1,5 +1,5 @@
 from core.router import tool_router
-from tools.registry import TOOL_MAP, TOOL_NAMES
+from tools.registry import ALL_TOOL_NAMES, TOOL_MAP, TOOL_NAMES
 
 
 REQUIRED_TOOLS = {
@@ -14,7 +14,8 @@ REQUIRED_TOOLS = {
 
 
 def test_registry_contains_required_tools() -> None:
-    assert REQUIRED_TOOLS.issubset(TOOL_NAMES)
+    assert REQUIRED_TOOLS == ALL_TOOL_NAMES
+    assert TOOL_NAMES.issubset(ALL_TOOL_NAMES)
     assert set(TOOL_MAP.keys()) == TOOL_NAMES
 
 

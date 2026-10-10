@@ -31,3 +31,7 @@ mcp==2.0.0
 # Streamlit UI and charts
 streamlit==1.61.0
 matplotlib==3.11.1
+
+# Web search (search_tool imports this) and OpenAI-compatible hosted LLMs
+tavily-python>=0.7.0
+langchain-openai>=1.0.0

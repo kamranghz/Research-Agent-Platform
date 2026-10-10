@@ -50,6 +50,7 @@ def build_initial_turn_state(
         "review_clarity": 0.0,
         "review_completeness": 0.0,
         "review_reason": "",
+        "review_status": "ok",
         "needs_tool": False,
         "tool_name": "",
         "tool_input": "",

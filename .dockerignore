@@ -1,0 +1,15 @@
+.git
+.github
+.env
+.env.*
+!.env.example
+data/
+__pycache__/
+*.pyc
+.pytest_cache/
+.vscode/
+Kamran Gholizadeh.*
+previous_project_tree.txt
+dict
+str
+finetune/outputs/
