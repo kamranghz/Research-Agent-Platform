@@ -12,6 +12,8 @@ license: mit
 
 # Research Agent Platform
 
-Multi-agent research assistant powered by LangGraph, with tool routing, RAG, and web search.
+Multi-agent research assistant powered by LangGraph, NVIDIA NIM, and ChromaDB.
 
-Built with LangGraph · Streamlit · NVIDIA NIM · ChromaDB
+**Architecture:** LangGraph · Streamlit · NVIDIA NIM · ChromaDB · MiniLM RAG
+
+Designed for Azure Container Apps · Live demo on Hugging Face Spaces
