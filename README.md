@@ -3,11 +3,9 @@ title: Research Agent Platform
 emoji: 🔬
 colorFrom: blue
 colorTo: purple
-sdk: streamlit
-sdk_version: 1.41.0
-app_file: ui/app.py
+sdk: docker
+app_port: 7860
 pinned: false
-license: mit
 ---
 
 # Research Agent Platform
