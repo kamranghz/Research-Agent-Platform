@@ -2,19 +2,14 @@
 
 # Research Agent Platform
 
-**A production-grade autonomous research agent — LangGraph orchestration, hybrid RAG, multi-tool execution, QLoRA fine-tuning, and GRPO reinforcement learning**
+**A LangGraph research agent with hybrid RAG, multi-tool execution, an independent local reviewer, and a QLoRA / GRPO fine-tuning experiment**
 
-[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
-[![LangGraph](https://img.shields.io/badge/LangGraph-latest-FF6B35?logo=langchain&logoColor=white)](https://github.com/langchain-ai/langgraph)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.x-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
-[![LangSmith](https://img.shields.io/badge/LangSmith-Eval-1C3A5E?logo=langchain&logoColor=white)](https://smith.langchain.com/)
-[![Qwen3-4B](https://img.shields.io/badge/Qwen3--4B-QLoRA%20%2B%20GRPO-7B2FBE)](https://huggingface.co/Qwen/Qwen3-4B)
-[![Azure](https://img.shields.io/badge/Azure-Free%20Tier-0078D4?logo=microsoftazure&logoColor=white)](https://azure.microsoft.com/)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
+[![LangGraph](https://img.shields.io/badge/LangGraph-orchestration-FF6B35?logo=langchain&logoColor=white)](https://github.com/langchain-ai/langgraph)
+[![Streamlit](https://img.shields.io/badge/Streamlit-UI-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-*Autonomous research · Hybrid RAG · Tool routing · LLM fine-tuning · Reinforcement learning from AI feedback*
-
-[Overview](#overview) · [Architecture](#architecture) · [Installation](#installation) · [Configuration](#configuration) · [Running the App](#running-the-app) · [Fine-tuning](#fine-tuning) · [Eval Results](#evaluation-results) · [Deployment](#deployment)
+[Overview](#overview) · [Architecture](#architecture) · [Installation](#installation) · [Configuration](#configuration) · [Running](#running-the-app) · [Fine-tuning](#fine-tuning-experiments) · [Results](#results) · [Deployment](#deployment) · [Limitations](#limitations)
 
 </div>
 
@@ -22,400 +17,213 @@
 
 ## Overview
 
-**Research Agent Platform** is an end-to-end autonomous research system built on LangGraph. Given a research query, the agent:
+Given a question, the agent runs a LangGraph workflow:
 
-- Routes the query through a **five-node LangGraph pipeline**: Researcher → Router → Tool Executor → Reviewer → Finalizer
-- Selects the right tool dynamically — web search, file reading, browser scraping, REST API calls, hybrid RAG over PDFs, or MCP servers
-- Cross-checks its own output with a **dual LLM reviewer** (NVIDIA Nemotron + gemma-reviewer via Ollama) before finalising
-- Logs every run to **LangSmith** for tracing and evaluation
-- Serves a **Streamlit UI** that can be deployed to **Azure App Service (free tier)**
+**Researcher → Tool Router → Tool Executor → Reviewer → Finalizer**
 
-The model powering tool-routing decisions is **Qwen3-4B**, fine-tuned in three phases — SFT, LangSmith-guided evaluation, and GRPO reinforcement learning — all scripts and adapter configs included in this repo.
+- The **Researcher** decides whether a tool is needed and which one (structured output: `needs_tool`, `tool_name`, `tool_input`, `draft_answer`), then writes the answer from the tool result.
+- The **Tool Executor** runs one of seven tools and returns the evidence.
+- The **Reviewer** is a separate, local, non-Qwen model (default `gemma-reviewer` via Ollama). It scores the draft for accuracy, relevance, clarity and completeness, and can send the draft back for a retry. If the judge is unreachable the answer is labelled **not reviewed**; scores are never fabricated.
+- The **Finalizer** produces the final answer and stores the turn in short-term memory.
+
+The repository also contains a small fine-tuning experiment (QLoRA SFT and GRPO on Qwen3-4B-Instruct-2507). It is an experiment: **the production graph does not use the fine-tuned adapter** (see [Results](#results)).
 
 ---
 
 ## Architecture
 
+```text
+User question (Streamlit UI / CLI)
+        │
+        ▼
+ Researcher ──▶ Router ──▶ Tool Executor ──▶ Reviewer ──▶ Finalizer ──▶ Answer
+      ▲                                         │
+      └──────────── retry (bounded) ◀───────────┘
 ```
-User Query (Streamlit UI)
-         │
-         ▼
-┌────────────────────────────────────────────────────────┐
-│                    LangGraph Pipeline                   │
-│                                                        │
-│  ┌─────────────┐    ┌──────────┐    ┌───────────────┐  │
-│  │  Researcher  │───▶│  Router  │───▶│ Tool Executor │  │
-│  └─────────────┘    └──────────┘    └───────┬───────┘  │
-│                                             │          │
-│                                     ┌───────▼───────┐  │
-│                                     │   Reviewer    │  │
-│                                     │ (Nemotron +   │  │
-│                                     │  gemma-rev.)  │  │
-│                                     └───────┬───────┘  │
-│                                             │          │
-│                                     ┌───────▼───────┐  │
-│                                     │   Finalizer   │  │
-│                                     └───────────────┘  │
-└────────────────────────────────────────────────────────┘
-         │
-         ▼
-   Final Answer + Sources
-```
-
-### Nodes
-
-| Node | Role |
-|---|---|
-| **Researcher** | Decomposes the query, forms a retrieval plan |
-| **Router** | Selects the best tool for each sub-task (fine-tuned Qwen3-4B) |
-| **Tool Executor** | Runs the selected tool and collects evidence |
-| **Reviewer** | Validates evidence quality; loops back if insufficient |
-| **Finalizer** | Synthesises evidence into a final grounded answer |
 
 ### Tools
 
-| Tool | Description |
+| Tool | Purpose |
 |---|---|
-| `search_tool` | Web search via SerpAPI / DuckDuckGo |
-| `browser_tool` | Headless browser scraping (Playwright) |
-| `file_reader` | Read and parse local files (PDF, TXT, DOCX) |
-| `api_tool` | Authenticated REST API calls |
-| `rag_tool` | Hybrid dense + lexical retrieval over indexed PDFs (ChromaDB) |
-| `llamaindex_rag_tool` | Alternative retrieval backend via LlamaIndex |
-| `mcp_tool` | Delegate to any connected MCP server |
+| `file_reader` | Read local text/PDF files (scoped to `datasets/` in demo mode) |
+| `browser_tool` | Fetch and read a given URL (off in demo mode) |
+| `search_tool` | Web search via Tavily (needs `TAVILY_API_KEY`) |
+| `api_tool` | Fetch a `post` / `user` / `todo` record by id from a registered API; input is a JSON string `{"resource": ..., "id": <positive int>}` |
+| `rag_tool` | Retrieval over the indexed documents (ChromaDB) |
+| `llamaindex_rag_tool` | The same task through the LlamaIndex backend |
+| `mcp_tool` | Call the connected MCP service (`get_project_status`, `search_knowledge_base`, ...) |
+
+### Models
+
+| Role | Default | Notes |
+|---|---|---|
+| Researcher | Ollama (local) | `LLM_PROVIDER=ollama \| nvidia \| groq`, with optional `LLM_FALLBACK_PROVIDERS`. Hosted defaults: NVIDIA `nvidia/nemotron-3-super-120b-a12b`, Groq `llama-3.3-70b-versatile` |
+| Reviewer | `gemma-reviewer` (Ollama, local) | Must be a non-Qwen model on localhost; there is no remote or Qwen fallback |
+| Embeddings | Ollama (`EMBEDDING_PROVIDER=ollama`) | Hosted option: NVIDIA embeddings |
 
 ### Memory
 
-- **Short-term**: LangGraph checkpoints (in-memory or SQLite) — maintains conversation context across turns
-- **Long-term** *(optional)*: durable store backend (configurable in `config/settings.py`)
-
-### Reviewer
-
-- **Primary**: NVIDIA Nemotron (cloud-hosted, zero-cost free tier)
-- **Secondary**: `gemma-reviewer:latest` via Ollama (local, run with `ollama serve`)
+- **Short-term**: LangGraph checkpoints per `thread_id` (`MEMORY_BACKEND`, SQLite optional).
+- **Long-term** (optional, `ENABLE_LONG_TERM_MEMORY`): off in demo mode.
 
 ---
 
-## Project Structure
+## Project structure
 
 ```text
-research-agent-platform/
-│
-├── agents/
-│   ├── researcher.py          # Researcher node — query decomposition
-│   └── reviewer.py            # Reviewer node — evidence validation
-│
-├── core/
-│   ├── graph.py               # LangGraph graph definition
-│   ├── router.py              # Tool routing logic
-│   └── finalizer.py           # Answer synthesis
-│
-├── tools/
-│   ├── search_tool.py
-│   ├── browser_tool.py
-│   ├── file_reader.py
-│   ├── api_tool.py
-│   └── mcp_tool.py
-│
-├── rag/
-│   ├── embeddings.py          # Embedding pipeline (dense retrieval)
-│   ├── hybrid_retriever.py    # Dense + lexical hybrid search
-│   └── llamaindex_backend.py  # LlamaIndex alternative backend
-│
-├── models/
-│   └── prompts.py             # All system and few-shot prompts
-│
-├── config/
-│   └── settings.py            # Centralised configuration (env-driven)
-│
-├── ui/
-│   └── app.py                 # Streamlit frontend
-│
-├── finetuning/
-│   ├── train_sft.py                    # Phase 1 — QLoRA SFT
-│   ├── evaluate_langsmith.py           # Phase 2 — LangSmith eval
-│   ├── grpo_answer_quality.py          # Phase 3 — GRPO RL training
-│   ├── evaluate_answer_grpo.py         # GRPO vs baseline comparison
-│   ├── data/
-│   │   └── real_world/
-│   │       └── answer_grpo_data.jsonl  # 39 GRPO training examples
-│   └── outputs/
-│       ├── evaluations/
-│       │   ├── langsmith_eval_v1/
-│       │   └── answer_grpo_vs_baseline/
-│       │       └── comparison.json
-│       └── qwen3_4b_instruct_2507_tool_routing_pilot/
-│           └── final_adapter_v3_grpo/  # Adapter config + tokenizer (weights on HF Hub)
-│
-├── tests/
-│   ├── test_graph_execution.py
-│   ├── test_browser_integration_fixed.py
-│   ├── test_review_evidence_selection.py
-│   └── test_tool_routing_scoring.py
-│
-├── Modelfile.gemma-reviewer    # Ollama Modelfile for gemma reviewer
-├── requirements.txt
-├── .env.example
-└── README.md
+agents/        researcher.py, reviewer.py
+core/          graph.py, router.py, tool_executor.py, finalizer.py, invoke.py, limits.py, state.py
+tools/         file_reader, browser_tool, search_tool, api_tool, mcp_tool, registry
+rag/           loaders, splitter, embeddings, vector store, LlamaIndex backend
+models/        llm.py (provider factory), prompts.py, schemas.py
+config/        settings.py (env-driven configuration)
+ui/            app.py (Streamlit)
+deploy/        DEPLOY.md, entrypoint.sh (Azure Container Apps guide)
+finetuning/    dataset builders, evaluation scripts, GRPO scripts, outputs/
+tests/         unit and integration tests
+docs/          architecture, experiments, failure modes, roadmap
 ```
 
 ---
 
 ## Installation
 
-### Prerequisites
-
-- Python 3.10+
-- [Ollama](https://ollama.ai/) (for local reviewer — optional but recommended)
-- Git
-
-### 1 — Clone the repository
+Prerequisites: Python 3.11+, Git, and [Ollama](https://ollama.ai/) for the local models.
 
 ```bash
-git clone https://github.com/kamranghz/Research-Agent-Platform.git
-cd Research-Agent-Platform
-```
-
-### 2 — Create a virtual environment
-
-```bash
+git clone <this repository>
+cd research-agent-platform
 python -m venv .venv
-
-# Linux / macOS
-source .venv/bin/activate
-
-# Windows (PowerShell)
-.venv\Scripts\Activate.ps1
-```
-
-### 3 — Install dependencies
-
-```bash
-pip install --upgrade pip
+# Windows PowerShell:  .venv\Scripts\Activate.ps1      Linux/macOS: source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-> **Windows note**: if you see `AttributeError: 'NoneType' object has no attribute 'apply'` at import time, this is a Triton unavailability issue on Windows. It is handled automatically by `install_logprob_shim()` in the fine-tuning scripts. No action needed for the main agent.
-
-### 4 — (Optional) Pull the gemma reviewer model
+Create the local reviewer:
 
 ```bash
 ollama create gemma-reviewer -f Modelfile.gemma-reviewer
 ```
 
-To keep the model warm in VRAM during long runs:
-
-```bash
-# PowerShell (Windows)
-Start-Job { ollama run gemma-reviewer "warm" }
-
-# bash (Linux / macOS)
-ollama run gemma-reviewer "warm" &
-```
+The fine-tuning scripts additionally need a CUDA GPU with `torch`, `transformers`, `peft`, `trl`, `bitsandbytes` and `datasets` (not in `requirements.txt`).
 
 ---
 
 ## Configuration
 
-Copy the environment template and fill in your keys:
-
 ```bash
-cp .env.example .env
+cp .env.example .env      # then fill in what you use
 ```
 
-Edit `.env`:
+Main variables (see `.env.example` for the full list):
 
-```env
-# ── LLM provider ──────────────────────────────────────────────
-OPENAI_API_KEY=sk-...            # or any OpenAI-compatible key
+| Variable | Meaning |
+|---|---|
+| `LLM_PROVIDER`, `LLM_FALLBACK_PROVIDERS` | Researcher provider: `ollama`, `nvidia`, `groq` |
+| `NVIDIA_API_KEY`, `GROQ_API_KEY` | Keys for hosted providers |
+| `EMBEDDING_PROVIDER` | `ollama` or `nvidia` |
+| `TAVILY_API_KEY` | Enables `search_tool` |
+| `LOCAL_REVIEWER_MODEL`, `LOCAL_REVIEWER_BASE_URL` | Local reviewer (default `gemma-reviewer`, `http://127.0.0.1:11434/v1`) |
+| `CHROMA_PERSIST_DIR` | Vector store location |
+| `MEMORY_BACKEND`, `ENABLE_LONG_TERM_MEMORY` | Memory settings |
+| `DEMO_MODE`, `DEMO_MAX_QUESTIONS_PER_SESSION`, `DEMO_MAX_QUESTIONS_TOTAL` | Public-demo lock-down (browser off, long-term memory off, `file_reader` limited to `datasets/`, question caps) |
+| `LANGSMITH_TRACING`, `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT` | Optional LangSmith tracing |
 
-# ── Search ────────────────────────────────────────────────────
-SERPAPI_KEY=...                  # optional; falls back to DuckDuckGo
-
-# ── LangSmith (evaluation & tracing) ──────────────────────────
-LANGSMITH_API_KEY=ls-...
-LANGSMITH_PROJECT=research-agent-platform
-LANGSMITH_TRACING=true
-
-# ── RAG (ChromaDB) ────────────────────────────────────────────
-CHROMA_PERSIST_DIR=./chroma_db   # local directory for vector store
-PDF_INDEX_DIR=./datasets          # directory containing PDFs to index
-
-# ── Ollama reviewer (local) ───────────────────────────────────
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_REVIEWER_MODEL=gemma-reviewer
-
-# ── Memory ────────────────────────────────────────────────────
-CHECKPOINT_BACKEND=memory        # "memory" or "sqlite"
-SQLITE_PATH=./checkpoints.db     # only used when backend = sqlite
-```
-
-> **Security**: never commit `.env`. It is in `.gitignore` by default. All secrets go here or in Azure App Settings — never in code.
+Never commit `.env`; it is git-ignored.
 
 ---
 
-## Running the App
+## Running the app
 
 ```bash
 python -m streamlit run ui/app.py
 ```
 
-The UI opens at `http://localhost:8501`.
-
-### Running tests
+The UI opens at `http://localhost:8501`. Run the tests with:
 
 ```bash
-pytest tests/ -v
+python -m pytest tests/ -q
 ```
+
+Some tests need a running Ollama or network access and are skipped when those are unavailable.
 
 ---
 
-## Fine-tuning
+## Fine-tuning experiments
 
-The `finetuning/` directory contains the full three-phase fine-tuning pipeline for **Qwen3-4B** on tool-routing and answer-quality tasks.
+All scripts are run from the project root as modules (`python -m finetuning.<name>`).
 
-### Phase 1 — Supervised Fine-Tuning (SFT)
+### 1. Tool-routing SFT (QLoRA)
 
-QLoRA fine-tuning on curated tool-routing examples.
+- Base model `Qwen/Qwen3-4B-Instruct-2507`, 4-bit NF4, LoRA r=16 / alpha=32, bf16.
+- Data: **79** human-verified tool-routing records (`tool_routing_verified_sft.jsonl`), split with seed 42 into 71 train / **8 held-out validation**.
+- A second round (`final_adapter_v2`) continued from the first adapter for 1 epoch at lr 5e-5 on `tool_routing_sft_v2.jsonl` (79 originals + 10 `llamaindex_rag_tool` records). Those 10 records were written by the author/assistant and were **not independently reviewed**.
+- Evaluation: `python -m finetuning.evaluate_tool_routing_pilot`, which compares the base model and the adapter under three prompts (`train`, `contract`, `production`).
 
-```bash
-python finetuning/train_sft.py
-```
+> The SFT training scripts (`train_tool_routing_qlora.py`, `retrain_tool_routing_v2.py`) are not present in the current working tree.
 
-Config highlights:
-- Base model: `Qwen/Qwen3-4B-Instruct`
-- LoRA rank 16, alpha 32
-- 4-bit NF4 quantisation, BF16 compute
-- ~200 training examples
+### 2. Graph-level routing check
 
-### Phase 2 — LangSmith Evaluation
+`python -m finetuning.evaluate_langsmith` sends the same 8 held-out queries through the real LangGraph graph (one thread per example, traced to LangSmith). It measures the **configured provider's** routing, not the adapter.
 
-Runs the fine-tuned adapter against 8 held-out examples and logs results to LangSmith.
+### 3. GRPO
 
-```bash
-python finetuning/evaluate_langsmith.py
-```
-
-Result: **8/8 correct** on the evaluation set (100% accuracy).
-
-Traces visible at: [smith.langchain.com/projects/research-agent-platform](https://smith.langchain.com/projects/research-agent-platform)
-
-### Phase 3 — GRPO Reinforcement Learning
-
-Group Relative Policy Optimisation (GRPO) on answer quality using AI feedback as the reward signal.
-
-```bash
-python finetuning/grpo_answer_quality.py
-```
-
-Config highlights:
-- Reward model: gemma-reviewer via Ollama
-- 93 training steps, 39 examples (31 train / 8 eval)
-- `use_vllm=False`, `config.use_liger_kernel=False` (Windows-compatible)
-- Pure-PyTorch logprob shim (`install_logprob_shim`) — no Triton required
-
-Evaluate the trained adapter:
-
-```bash
-python finetuning/evaluate_answer_grpo.py \
-    --grpo-adapter finetuning/outputs/qwen3_4b_instruct_2507_tool_routing_pilot/final_adapter_v3_grpo
-```
+- `grpo_tool_routing.py`: GRPO for tool routing with hard-case mining. Reward is tool correctness (and optionally the graph's reviewer scores).
+- `collect_answer_grpo_data.py`, `grpo_answer_quality.py`, `evaluate_answer_grpo.py`: GRPO for answer quality. `answer_grpo_data.jsonl` holds **39** collected examples (31 train / 8 eval); the reward is the reviewer node's weighted score. `use_vllm=False`, and `install_logprob_shim()` computes log-probabilities in plain PyTorch because TRL's fused kernel needs Triton, which is unavailable on Windows.
 
 ---
 
-## Evaluation Results
+## Results
 
-### LangSmith Tool-Routing Eval (Phase 2)
+All numbers come from files under `finetuning/outputs/evaluations/`. Every evaluation set has **8 examples**, so differences of one or two examples are within noise.
 
-| Metric | Score |
-|---|---|
-| Accuracy (8 examples) | **8 / 8 (100%)** |
-| Correct tool selections | 8 |
+### Tool routing: correct tool / exact tool call (8 held-out examples)
 
-### GRPO Answer-Quality Eval (Phase 3)
-
-| Model | Mean Score | Notes |
+| Model, prompt | Tool selection | Exact tool call (name + input) |
 |---|---|---|
-| Baseline (Qwen3-4B-Instruct) | **0.970** | Already high — ceiling effect |
-| GRPO adapter (v3) | **0.960** | Noisy signal due to Ollama timeout |
+| Base, training prompt | 0/8 | 0/8 |
+| Base, production prompt | 8/8 | 3/8 |
+| SFT adapter v1, production prompt | 7/8 | 3/8 |
+| SFT adapter v2, production prompt | 8/8 | 5/8 |
 
-> **Interpretation**: The baseline already scored 0.97/1.0, indicating a ceiling effect on this 8-example set. The next iteration will use harder examples and a stable reward judge to produce a clearer signal. The adapter config and tokenizer are committed to this repo; the model weights (`adapter_model.safetensors`) are hosted on HuggingFace Hub — link to be added when uploaded.
+The base model with the production prompt already matches the adapter on tool selection, so the original "base 0/8" baseline was unfair (it used a prompt the base model was never given the contract for). The adapter's measured advantage is in argument formatting only, and that is based on 8 examples.
+
+### Graph-level routing (production graph, 8 examples)
+
+8/8 queries routed to the expected tool (`finetuning/outputs/evaluations/langsmith_eval_v1/results.json`). This used the configured provider, not the fine-tuned adapter, so it does **not** measure the adapter.
+
+### GRPO answer quality (8 examples, reviewer-scored)
+
+| Model | Accuracy | Relevance | Clarity | Completeness | Overall |
+|---|---|---|---|---|---|
+| Baseline Qwen3-4B-Instruct | 0.925 | 1.000 | 1.000 | 1.000 | **0.970** |
+| GRPO adapter | 0.900 | 1.000 | 1.000 | 1.000 | **0.960** |
+
+GRPO won 0 of 8 comparisons. The baseline is already near the ceiling, so this experiment shows **no improvement**. The directory `final_adapter_v3_grpo/` in the repo holds only a config, tokenizer and a `manifest.json` from a tool-routing GRPO run that found 0 hard cases and trained 0 epochs; it contains no adapter weights.
 
 ---
 
 ## Deployment
 
-### Azure App Service (Free Tier — $0/month)
+`deploy/DEPLOY.md` documents the intended zero-fixed-cost demo: a public container image on GHCR run on **Azure Container Apps (Consumption plan)**, no Log Analytics workspace and no paid container registry, with `DEMO_MODE=1`. The first request after idle time is slow (scale-to-zero cold start).
 
-**Tier**: F1 (Free) — 60 CPU-minutes/day, 1 GB RAM, shared compute.
-
-#### 1 — Build and push Docker image
-
-```bash
-# Build
-docker build -t research-agent-platform .
-
-# Tag and push to Azure Container Registry (free tier: 10 GB)
-az acr login --name <your-acr-name>
-docker tag research-agent-platform <your-acr-name>.azurecr.io/research-agent-platform:latest
-docker push <your-acr-name>.azurecr.io/research-agent-platform:latest
-```
-
-#### 2 — Create App Service
-
-```bash
-az webapp create \
-  --resource-group <your-rg> \
-  --plan <your-plan> \
-  --name <your-app-name> \
-  --deployment-container-image-name <your-acr-name>.azurecr.io/research-agent-platform:latest
-```
-
-#### 3 — Set environment variables
-
-In **Azure Portal → App Service → Configuration → Application Settings**, add all keys from `.env` (never put secrets in code or Docker image).
-
-#### Live URL
-
-`https://<your-app-name>.azurewebsites.net`
+The repository also contains a Hugging Face Space configuration (`Dockerfile`). No public demo URL has been verified yet.
 
 ---
 
-## Model Weights (HuggingFace Hub)
+## Limitations
 
-The GRPO-trained adapter (`final_adapter_v3_grpo`) will be uploaded to:
-
-> 🔗 **`[TO BE ADDED — kamranghz/qwen3-4b-research-agent-grpo]`**
-
-The adapter config and tokenizer are already committed to this repo at:
-
-```
-finetuning/outputs/qwen3_4b_instruct_2507_tool_routing_pilot/final_adapter_v3_grpo/
-```
-
----
-
-## Roadmap
-
-- [x] Phase 1 — QLoRA SFT on tool routing
-- [x] Phase 2 — LangSmith evaluation (8/8)
-- [x] Phase 3 — GRPO answer-quality RL
-- [ ] Upload adapter weights to HuggingFace Hub
-- [ ] Harder evaluation examples (avoid ceiling effect)
-- [ ] Stable reward judge (persistent Ollama VRAM management)
-- [ ] Azure deployment (live URL)
-- [ ] MCP server integration examples
+- The fine-tuned adapters are experimental and are not wired into the agent.
+- Evaluation sets are tiny (8 examples); no confidence intervals are reported.
+- The 10 added `llamaindex_rag_tool` SFT records are author-generated.
+- Reviewer scores come from a small local model and are noisy.
+- `rag_tool` vs `llamaindex_rag_tool` selection is the hardest routing case.
 
 ---
 
 ## License
 
-[MIT License](LICENSE)
-
----
+[MIT](LICENSE)
 
 ## Author
 
-**Kamran Gholizadeh HamlAbadi**  
-PhD Candidate, University of Ottawa · MCRLab  
-[github.com/kamranghz](https://github.com/kamranghz) · [LinkedIn](https://www.linkedin.com/in/kamrangh)
+**Kamran Gholizadeh Hamlabadi** · PhD Candidate, University of Ottawa · [github.com/kamranghz](https://github.com/kamranghz)
