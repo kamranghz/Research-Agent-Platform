@@ -1,0 +1,16 @@
+{
+  "stage": "grpo",
+  "base_adapter": "finetuning/outputs/qwen3_4b_instruct_2507_tool_routing_pilot/final_adapter_v2",
+  "dataset": "finetuning/data/real_world/tool_routing_sft_v2.jsonl",
+  "train_examples": 81,
+  "hard_only": true,
+  "hard_cases_found": 0,
+  "epochs": 0,
+  "lr": 5e-07,
+  "kl_coeff": 0.1,
+  "group_size": 4,
+  "langraph_judge_enabled": true,
+  "train_loss": null,
+  "eval_loss": null,
+  "timestamp": "2026-10-11T20:39:36.300530+00:00"
+}

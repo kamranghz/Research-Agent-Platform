@@ -1,0 +1,250 @@
+{
+  "grpo_adapter": "finetuning/outputs/qwen3_4b_instruct_2507_tool_routing_pilot/final_adapter_v3_grpo",
+  "examples": [
+    {
+      "example": 0,
+      "query": "Locate the official Streamlit documentation site.",
+      "baseline": {
+        "answer": "The official Streamlit documentation site is available at [https://docs.streamlit.io](https://docs.streamlit.io). This site provides comprehensive resources for getting started with Streamlit, including setup instructions, API references, and examples of data apps. \n\nSource: Result 2 (Streamlit documentation URL)",
+        "review_status": "ok",
+        "scores": {
+          "accuracy": 1.0,
+          "relevance": 1.0,
+          "clarity": 1.0,
+          "completeness": 1.0
+        },
+        "overall": 1.0
+      },
+      "grpo": {
+        "answer": "The official Streamlit documentation site is available at https://docs.streamlit.io.",
+        "review_status": "ok",
+        "scores": {
+          "accuracy": 1.0,
+          "relevance": 1.0,
+          "clarity": 1.0,
+          "completeness": 1.0
+        },
+        "overall": 1.0
+      },
+      "delta": 0.0,
+      "winner": "tie"
+    },
+    {
+      "example": 1,
+      "query": "Using the connected MCP service, summarize the capabilities of this platform.",
+      "baseline": {
+        "answer": "The connected MCP (Multi-Tool Capability) service provides a comprehensive platform for evaluating and enabling AI agent capabilities through real-world tool usage. Its key capabilities include:\n\n1. **AI Model and Dataset Access**:  \n   - Integrates with the Hugging Face Hub to provide access to machine learning models, datasets, research papers, and interactive spaces.  \n   - Tools such as `search-models` allow filtering models by task, library, or popularity, while `get-model-info` delivers detailed metadata (e.g., architecture, performance) for specific models.  \n   - Supports `search-datasets` for discovering relevant datasets.\n\n2. **Icon and Tool Library Access**:  \n   - Offers a large-scale icon library via the Huge Icons service with search capabilities and platform-specific implementation guidance.  \n   - Tools like `list_icons` retrieve all available icons with metadata and categories, and `search_icons` enables discovery by name or tag.  \n   - Includes platform-specific usage instructions for integration into development environments.\n\n3. **Tool Functionality for Real-World Tasks**:  \n   - Provides a suite of tools for geospatial operations such as:  \n     - `maps_geocode` (converts addresses to coordinates)  \n     - `maps_reverse_geocode` (converts coordinates to addresses)  \n     - `maps_distance_matrix` (calculates travel distances/durations)  \n     - `maps_directions` (provides turn-by-turn navigation)  \n     - `maps_elevation` (retrieves elevation data)  \n   - These tools simulate complex, real-world agent behaviors beyond simple task completion.\n\n4. **Evaluation of Agent Capabilities**:  \n   - The MCP-BENCH framework evaluates agents across six dimensions: task fulfillment, information grounding, tool appropriateness, parameter accuracy, dependency awareness, and parallelism efficiency.  \n   - It focuses on robustness in long-horizon, cross-server workflows, identifying gaps in current LLMs' ability to generalize in complex, adaptive environments.  \n   - Designed to go beyond simple offline evaluations by simulating real-world complexity and tool interactions.\n\nIn summary, the MCP platform enables developers and researchers to build, test, and evaluate AI agents in realistic environments using a rich set of tools, models, and geospatial functions, with a strong emphasis on scalability, robustness, and real-world applicability.  \n\nSources:  \n- Hugging Face MCP Server (https://github.com/shreyaskarnik/huggingface-mcp-server)  \n- Huge Icons Service (https",
+        "review_status": "ok",
+        "scores": {
+          "accuracy": 0.9,
+          "relevance": 1.0,
+          "clarity": 1.0,
+          "completeness": 1.0
+        },
+        "overall": 0.9600000000000001
+      },
+      "grpo": {
+        "answer": "The platform, referred to as the MCP (Multi-Tool Capability) service, provides a comprehensive suite of tools and capabilities for evaluating and deploying AI agents with real-world functionality. Key capabilities include:\n\n1. **Model and Dataset Access**:  \n   - `search-models` and `get-model-info` allow users to search and retrieve detailed information about AI models (e.g., architecture, performance) and datasets from the Hugging Face Hub, supporting filtering by task, library, and popularity.\n\n2. **Tool Integration and Discovery**:  \n   - The platform offers a wide range of tools, such as:\n     - **Maps tools**: `maps_geocode`, `maps_reverse_geocode`, `maps_distance_matrix`, `maps_directions`, `maps_elevation` for location-based operations.\n     - **Icon tools**: `list_icons` and `search_icons` to browse and search a large library of high-quality icons with metadata and platform-specific implementation guidance.\n     - `get_platform_usage` provides tailored implementation details for different development environments.\n\n3. **Agent Evaluation and Benchmarking**:  \n   - The MCP-BENCH framework evaluates agents on complex, real-world tasks, focusing on capabilities like task fulfillment, information grounding, tool appropriateness, parameter accuracy, dependency awareness, and parallelism efficiency.  \n   - It emphasizes robustness in scaling and handling long-horizon, cross-server tasks, identifying gaps in current LLMs' ability to generalize in complex, adaptive workflows.\n\n4. **Ecosystem-Scale Evaluation**:  \n   - Unlike traditional benchmarks, MCP-BENCH enables evaluation of real-world tool-using agents in complex, dynamic environments, offering a more realistic assessment of agent performance.\n\nIn summary, the platform serves as a robust, scalable, and real-world-focused infrastructure for evaluating and deploying AI agents through integrated access to models, datasets, tools, and a standardized benchmarking framework.  \n\nSources:  \n- Hugging Face MCP Server (https://github.com/shreyaskarnik/huggingface-mcp-server)  \n- Huge Icons (https://github.com/hugeicons/mcp-server)  \n- MCP-BENCH evaluation framework (sample.pdf, pages 8, 18, 48)",
+        "review_status": "ok",
+        "scores": {
+          "accuracy": 0.7,
+          "relevance": 1.0,
+          "clarity": 1.0,
+          "completeness": 1.0
+        },
+        "overall": 0.88
+      },
+      "delta": -0.08000000000000007,
+      "winner": "baseline"
+    },
+    {
+      "example": 2,
+      "query": "Retrieve LlamaIndex-indexed content about reusable prompts.",
+      "baseline": {
+        "answer": "The provided results do not contain any content specifically about \"reusable prompts\" in the context of LlamaIndex or related prompt engineering frameworks. While the documents discuss prompt design, task fuzzing, and judge rubrics for evaluating agent performance, none of the excerpts mention reusable prompts, their design, implementation, or integration with LlamaIndex.\n\nTherefore, based on the available tool results, there is no LlamaIndex-indexed content about reusable prompts.",
+        "review_status": "ok",
+        "scores": {
+          "accuracy": 1.0,
+          "relevance": 1.0,
+          "clarity": 1.0,
+          "completeness": 1.0
+        },
+        "overall": 1.0
+      },
+      "grpo": {
+        "answer": "The provided results do not contain explicit information about \"reusable prompts\" in the context of LlamaIndex or related tools. While the documents discuss prompt engineering, task fuzzing, and judge rubrics for evaluating agent performance, none of the content specifically addresses reusable prompts or their implementation within LlamaIndex.\n\nTherefore, based on the given results, there is no direct or relevant information about LlamaIndex-indexed content on reusable prompts.",
+        "review_status": "ok",
+        "scores": {
+          "accuracy": 1.0,
+          "relevance": 1.0,
+          "clarity": 1.0,
+          "completeness": 1.0
+        },
+        "overall": 1.0
+      },
+      "delta": 0.0,
+      "winner": "tie"
+    },
+    {
+      "example": 3,
+      "query": "Find passages in the research corpus about LangGraph checkpointing.",
+      "baseline": {
+        "answer": "The provided research corpus does not contain any passages specifically discussing **LangGraph checkpointing**.\n\nWhile several documents reference language models, tool use, reasoning, and agent evaluation (e.g., React, tool calling, execution trajectories), there is no mention of \"checkpointing\" in the context of LangGraph or any related system.\n\nTherefore, based on the available results, **no relevant passages about LangGraph checkpointing exist** in the corpus.",
+        "review_status": "ok",
+        "scores": {
+          "accuracy": 1.0,
+          "relevance": 1.0,
+          "clarity": 1.0,
+          "completeness": 1.0
+        },
+        "overall": 1.0
+      },
+      "grpo": {
+        "answer": "The provided research corpus does not contain any passages specifically discussing \"LangGraph checkpointing.\" While several documents reference language models, tool use, reasoning, and agent evaluation (e.g., React, MCPWorld, and tool calling benchmarks), there is no explicit mention or discussion of checkpointing mechanisms within LangGraph or related frameworks.\n\nTherefore, based on the available results, there are no relevant passages about LangGraph checkpointing.",
+        "review_status": "ok",
+        "scores": {
+          "accuracy": 1.0,
+          "relevance": 1.0,
+          "clarity": 1.0,
+          "completeness": 1.0
+        },
+        "overall": 1.0
+      },
+      "delta": 0.0,
+      "winner": "tie"
+    },
+    {
+      "example": 4,
+      "query": "Based only on our indexed documents, what is mentioned about MCP?",
+      "baseline": {
+        "answer": "Based on the indexed documents, the following information about MCP (Multi-Tool Capability) is mentioned:\n\n- MCP servers are used in a benchmark called MCP-BENCH, which includes 28 representative servers spanning eleven functional domains such as Media & Entertainment, Research & Knowledge, Finance, Science, Software Development, Geography & Travel, Social & Intelligence, Mathematics, Health, Weather, Time, and Divination.\n- The benchmark covers 250 tools across these servers, with tool counts varying from single-tool servers (e.g., Call for Papers, FruityVice) to large multi-tool platforms like BioMCP (35 tools).\n- The tasks in MCP-BENCH are designed to reflect real-world complexity and unpredictability, involving multiple servers, multi-round interactions (e.g., average of 9.2 rounds for GPT-5), and diverse use cases such as healthcare, scientific computation, and cultural heritage.\n- The benchmark is formalized as a structured extension of the Partially Observable Markov Decision Process (POMDP), with two execution paradigms: one-shot global planning and multi-turn planning and observation.\n- The tasks are more complex than prior benchmarks (e.g., MCPEval and MCP-RADAR), involving longer, multi-objective workflows with multiple server interactions and observations.\n\nThis indicates that MCP refers to a system or platform enabling agents to interact with external tools and servers, with the benchmark emphasizing realistic, complex, and diverse real-world usage scenarios.",
+        "review_status": "ok",
+        "scores": {
+          "accuracy": 0.5,
+          "relevance": 1.0,
+          "clarity": 1.0,
+          "completeness": 1.0
+        },
+        "overall": 0.8
+      },
+      "grpo": {
+        "answer": "Based on the indexed documents, MCP (Multi-Tool Capability) is described as a framework for evaluating tool-using agents. The key points mentioned are:\n\n1. **Scope and Diversity**: The benchmark covers 28 representative MCP servers across eleven functional domains (e.g., Media & Entertainment, Research & Knowledge, Finance, Science, Software Development, Geography & Travel, Health, etc.), providing access to 250 tools. The domains reflect real-world use cases, with a focus on diversity and unpredictability.\n\n2. **Task Complexity**: The tasks in MCP-BENCH are designed to reflect real-world complexity, involving multiple servers, multi-round interactions (e.g., average of 9.2 rounds for GPT-5), and diverse workflows, unlike prior benchmarks that focused on short, single-objective workflows.\n\n3. **Formalization**: The benchmark is formalized as a structured extension of the Partially Observable Markov Decision Process (POMDP), tailored for tool-using agents. It includes two execution paradigms: (1) one-shot global planning and (2) multi-turn planning and observation. The POMDP formulation includes components such as state space (S), action space (A), observation space (O), transition function (T), reward function (R), task instruction space (U), and available servers (Σ).\n\n4. **Evaluation Goals**: The framework aims to stress-test agents' reasoning and ability to manage complex, real-world interactions involving multiple tools and servers.\n\nIn summary, MCP is a comprehensive, real-world-oriented benchmark for evaluating tool-using agents, emphasizing multi-round interactions, diverse domains, and complex workflows through a formal POMDP-based design.",
+        "review_status": "ok",
+        "scores": {
+          "accuracy": 0.5,
+          "relevance": 1.0,
+          "clarity": 1.0,
+          "completeness": 1.0
+        },
+        "overall": 0.8
+      },
+      "delta": 0.0,
+      "winner": "tie"
+    },
+    {
+      "example": 5,
+      "query": "According to the connected MCP service, what is the agent workflow?",
+      "baseline": {
+        "answer": "According to the connected MCP service, the agent workflow follows the LangGraph workflow structure: Researcher → Router → Tool Executor → Reviewer → Finalizer. This sequence enables a structured, step-by-step process where the agent conducts research, routes tasks, executes tools, reviews outputs, and finalizes the response. The workflow supports short-term memory via LangGraph checkpoints and optionally long-term durable memory, with quality assurance provided by NVIDIA Nemotron as the reviewer.",
+        "review_status": "ok",
+        "scores": {
+          "accuracy": 1.0,
+          "relevance": 1.0,
+          "clarity": 1.0,
+          "completeness": 1.0
+        },
+        "overall": 1.0
+      },
+      "grpo": {
+        "answer": "The agent workflow, as defined by the connected MCP service, follows the LangGraph workflow: Researcher -> Router -> Tool Executor -> Reviewer -> Finalizer. This structured sequence enables the agent to perform research, route tasks, execute tools, review outputs, and finalize responses. The workflow also supports features such as hybrid RAG over indexed PDFs, short-term conversational memory via LangGraph checkpoints, and optional long-term durable memory storage. Additionally, the NVIDIA Nemotron reviewer is used to score answer quality. \n\nSource: Research Agent Platform capabilities.",
+        "review_status": "ok",
+        "scores": {
+          "accuracy": 1.0,
+          "relevance": 1.0,
+          "clarity": 1.0,
+          "completeness": 1.0
+        },
+        "overall": 1.0
+      },
+      "delta": 0.0,
+      "winner": "tie"
+    },
+    {
+      "example": 6,
+      "query": "Read user record 5 from the registered API.",
+      "baseline": {
+        "answer": "User record 5 is as follows:\n\n- **Name**: Chelsey Dietrich  \n- **Username**: Kamren  \n- **Email**: Lucio_Hettinger@annie.ca  \n- **Address**:  \n  - Street: Skiles Walks  \n  - Suite: Suite 351  \n  - City: Roscoeview  \n  - ZIP Code: 33263  \n  - Geo Coordinates: Latitude: -31.8129, Longitude: 62.5342  \n- **Phone**: (254)954-1289  \n- **Website**: demarco.info  \n- **Company**:  \n  - Name: Keebler LLC  \n  - Catchphrase: User-centric fault-tolerant solution  \n  - Description: Revolutionize end-to-end systems  \n\nSource: Provided user record.",
+        "review_status": "ok",
+        "scores": {
+          "accuracy": 1.0,
+          "relevance": 1.0,
+          "clarity": 1.0,
+          "completeness": 1.0
+        },
+        "overall": 1.0
+      },
+      "grpo": {
+        "answer": "User record 5 is as follows:\n\n- **Name**: Chelsey Dietrich  \n- **Username**: Kamren  \n- **Email**: Lucio_Hettinger@annie.ca  \n- **Address**:  \n  - Street: Skiles Walks  \n  - Suite: Suite 351  \n  - City: Roscoeview  \n  - ZIP Code: 33263  \n  - Geo Coordinates: Latitude: -31.8129, Longitude: 62.5342  \n- **Phone**: (254)954-1289  \n- **Website**: demarco.info  \n- **Company**:  \n  - Name: Keebler LLC  \n  - Catchphrase: User-centric fault-tolerant solution  \n  - BS: Revolutionize end-to-end systems  \n\nSource: Provided user record.",
+        "review_status": "ok",
+        "scores": {
+          "accuracy": 1.0,
+          "relevance": 1.0,
+          "clarity": 1.0,
+          "completeness": 1.0
+        },
+        "overall": 1.0
+      },
+      "delta": 0.0,
+      "winner": "tie"
+    },
+    {
+      "example": 7,
+      "query": "Get post number 7 from our registered API.",
+      "baseline": {
+        "answer": "The post with post number 7 has the following details:\n\n- **Title**: magnam facilis autem  \n- **Body**: dolore placeat quibusdam ea quo vitae magni quis enim qui quis quo nemo aut saepe quidem repellat excepturi ut quia sunt ut sequi eos ea sed quas  \n\nThis post belongs to user ID 1.  \n\nSource: Provided API response.",
+        "review_status": "ok",
+        "scores": {
+          "accuracy": 1.0,
+          "relevance": 1.0,
+          "clarity": 1.0,
+          "completeness": 1.0
+        },
+        "overall": 1.0
+      },
+      "grpo": {
+        "answer": "The post with post number 7 has the following details:\n\n- **Title**: magnam facilis autem  \n- **Body**: dolore placeat quibusdam ea quo vitae\\nmagni quis enim qui quis quo nemo aut saepe\\nquidem repellat excepturi ut quia\\nsunt ut sequi eos ea sed quas  \n\nThis information is retrieved from the registered API.",
+        "review_status": "ok",
+        "scores": {
+          "accuracy": 1.0,
+          "relevance": 1.0,
+          "clarity": 1.0,
+          "completeness": 1.0
+        },
+        "overall": 1.0
+      },
+      "delta": 0.0,
+      "winner": "tie"
+    }
+  ],
+  "aggregate": {
+    "baseline": {
+      "accuracy": 0.925,
+      "relevance": 1.0,
+      "clarity": 1.0,
+      "completeness": 1.0,
+      "overall": 0.97,
+      "reviewed": 8
+    },
+    "grpo": {
+      "accuracy": 0.9,
+      "relevance": 1.0,
+      "clarity": 1.0,
+      "completeness": 1.0,
+      "overall": 0.96,
+      "reviewed": 8
+    },
+    "grpo_wins": 0,
+    "comparable_examples": 8,
+    "total_examples": 8
+  }
+}
